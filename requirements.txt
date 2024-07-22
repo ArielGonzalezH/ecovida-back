@@ -1,0 +1,9 @@
+Flask
+Flask-SQLAlchemy
+Flask-Bcrypt
+Flask-PyMongo
+pymongo
+pymysql
+spyne
+lxml
+pika
