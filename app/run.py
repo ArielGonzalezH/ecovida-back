@@ -2,11 +2,11 @@ import pymysql
 pymysql.install_as_MySQLdb()
 
 from flask import Flask
-from app.config import Config
-from app.extensions import db, bcrypt
+from config import Config
+from extensions import db, bcrypt
 from flask_pymongo import PyMongo
-from app.services import foundation_service, product_service, role_service, sale_service, user_service
-from app.soap_services import inventario_service
+from services import foundation_service, product_service, role_service, sale_service, user_service
+from soap_services import inventario_service
 
 def create_app():
     app = Flask(__name__)

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app.extensions import db
-from app.models.sale import Sale
+from extensions import db
+from models.sale import Sale
 
 bp = Blueprint('sale_service', __name__)
 

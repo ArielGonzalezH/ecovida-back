@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app.extensions import db
-from app.models.foundation import Foundation
+from extensions import db
+from models.foundation import Foundation
 
 bp = Blueprint('foundation_service', __name__)
 

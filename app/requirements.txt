@@ -7,3 +7,4 @@ pymysql
 spyne
 lxml
 pika
+cryptography

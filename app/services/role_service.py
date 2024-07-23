@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app.extensions import db
-from app.models.role import Role
+from extensions import db
+from models.role import Role
 
 bp = Blueprint('role_service', __name__)
 
