@@ -17,7 +17,14 @@ def obtener_rol(id):
 @bp.route('/roles', methods=['POST'])
 def crear_rol():
     data = request.json
-    nuevo_rol = Role(**data)
+
+    max_id = db.session.query(db.func.max(Role.role_id)).scalar()
+    nuevo_id = max_id + 1 if max_id is not None else 1
+
+    nuevo_rol = Role(
+        role_id=nuevo_id,
+        role_name=data['role_name']
+    )
     db.session.add(nuevo_rol)
     db.session.commit()
     return jsonify(nuevo_rol.as_dict()), 201

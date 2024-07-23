@@ -58,15 +58,23 @@ def obtener_usuario(id):
 @bp.route('/usuarios', methods=['POST'])
 def crear_usuario():
     data = request.json
+
+    # Obtener el ID máximo actual en la base de datos
+    max_id = db.session.query(db.func.max(User.user_id)).scalar()
+    nuevo_id = max_id + 1 if max_id is not None else 1
+
     nuevo_usuario = User(
+        user_id=nuevo_id,
         role_id=data['role_id'],
         user_name=data['user_name'],
         user_lastname=data['user_lastname'],
         user_email=data['user_email'],
         user_password=generate_password_hash(data['user_password'])
     )
+    
     db.session.add(nuevo_usuario)
     db.session.commit()
+    
     auth_token = encode_auth_token(nuevo_usuario.user_id)
     return jsonify({'token': auth_token, 'usuario': nuevo_usuario.as_dict()}), 201
 
@@ -107,8 +115,12 @@ def login():
 @bp.route('/usuarios/registro', methods=['POST'])
 def registro():
     data = request.json
+
+    max_id = db.session.query(db.func.max(User.user_id)).scalar()
+    nuevo_id = max_id + 1 if max_id is not None else 1
+
     nuevo_usuario = User(
-        user_id=data['user_id'],
+        user_id=nuevo_id,
         role_id=data['role_id'],
         user_name=data['user_name'],
         user_lastname=data['user_lastname'],

@@ -20,11 +20,23 @@ def get_foundation(id):
 
 @bp.route('/foundations', methods=['POST'])
 def create_foundation():
-    data = request.json
-    new_foundation = Foundation(**data)
-    db.session.add(new_foundation)
-    db.session.commit()
-    return jsonify(new_foundation.as_dict()), 201
+    try:
+        data = request.json
+
+        # Obtener el ID más alto en la base de datos
+        max_id = db.session.query(db.func.max(Foundation.found_id)).scalar()
+        new_id = max_id + 1 if max_id is not None else 1
+
+        # Crear nueva fundación con el nuevo ID
+        new_foundation = Foundation(found_id=new_id, **data)
+        
+        db.session.add(new_foundation)
+        db.session.commit()
+        
+        return jsonify(new_foundation.as_dict()), 201
+    except Exception as e:
+        print(f"Error al crear fundación: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @bp.route('/foundations/<int:id>', methods=['PUT'])
 def update_foundation(id):
