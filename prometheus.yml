@@ -6,17 +6,22 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # Configuración para MongoDB
-  - job_name: 'mongodb'
+  - job_name: 'cadvisor'
     static_configs:
-      - targets: ['mongodb:27017']
+      - targets: ['cadvisor:8080']
 
-  # Configuración para MySQL
   - job_name: 'mysql'
     static_configs:
-      - targets: ['mysql:3306']
+      - targets: ['mysqld_exporter:9104']
 
-  # Configuración para RabbitMQ
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb_exporter:9216']
+
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx_exporter:9113']
+
   - job_name: 'rabbitmq'
     static_configs:
-      - targets: ['rabbitmq:15672']
+      - targets: ['rabbitmq_exporter:9090']
