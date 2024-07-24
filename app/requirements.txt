@@ -8,3 +8,5 @@ spyne
 lxml
 pika
 cryptography
+pyjwt
+flask-cors

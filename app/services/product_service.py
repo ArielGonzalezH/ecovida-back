@@ -17,7 +17,19 @@ def obtener_producto(id):
 @bp.route('/productos', methods=['POST'])
 def crear_producto():
     data = request.json
-    nuevo_producto = Product(**data)
+
+    max_id = db.session.query(db.func.max(Product.product_id)).scalar()
+    nuevo_id = max_id + 1 if max_id is not None else 1
+
+    nuevo_producto = Product(
+        product_id=nuevo_id,
+        found_id=data['found_id'],
+        product_name=data['product_name'],
+        product_price=data['product_price'],
+        product_description=data['product_description'],
+        product_stock=data['product_stock'],
+        product_duedate=data['product_duedate']
+    )
     db.session.add(nuevo_producto)
     db.session.commit()
     return jsonify(nuevo_producto.as_dict()), 201

@@ -1,6 +1,7 @@
 import os
 
 class Config:
+    SECRET_KEY = 'ecovida_secret'
     # Conexión a MySQL
     SQLALCHEMY_DATABASE_URI = os.getenv('MYSQL_URI', 'mysql+pymysql://root:ecovida@mysql:3306/ecovida')
     SQLALCHEMY_TRACK_MODIFICATIONS = False

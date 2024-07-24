@@ -17,7 +17,17 @@ def obtener_venta(id):
 @bp.route('/ventas', methods=['POST'])
 def crear_venta():
     data = request.json
-    nueva_venta = Sale(**data)
+
+    max_id = db.session.query(db.func.max(Sale.sale_id)).scalar()
+    nuevo_id = max_id + 1 if max_id is not None else 1
+
+    nueva_venta = Sale(
+        sale_id=nuevo_id,
+        product_id=data['product_id'],
+        user_id=data['user_id'],
+        sale_date=data['sale_date'],
+        sale_quantity=data['sale_quantity']
+    )
     db.session.add(nueva_venta)
     db.session.commit()
     return jsonify(nueva_venta.as_dict()), 201
