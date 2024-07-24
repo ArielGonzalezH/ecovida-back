@@ -1,56 +1,19 @@
 from flask import Blueprint, request, jsonify
 from extensions import db
 from models.user import User
-import jwt
-import datetime
-from functools import wraps
-from flask import current_app as app
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, decode_token
 
 bp = Blueprint('user_service', __name__)
 
-def encode_auth_token(user_id):
-    try:
-        payload = {
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1),
-            'iat': datetime.datetime.utcnow(),
-            'sub': user_id
-        }
-        return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
-    except Exception as e:
-        return str(e)
-
-def decode_auth_token(auth_token):
-    try:
-        payload = jwt.decode(auth_token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        return payload['sub']
-    except jwt.ExpiredSignatureError:
-        return 'Signature expired. Please log in again.'
-    except jwt.InvalidTokenError:
-        return 'Invalid token. Please log in again.'
-
-def token_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        token = request.headers.get('Authorization')
-        if not token:
-            return ('', 401)
-        if token.startswith('Bearer '):
-            token = token[7:]
-        user_id = decode_auth_token(token)
-        if isinstance(user_id, str):
-            return ('', 401)
-        return f(*args, **kwargs)
-    return decorated_function
-
 @bp.route('/usuarios', methods=['GET'])
-@token_required
+@jwt_required()
 def obtener_usuarios():
     usuarios = User.query.all()
     return jsonify([usuario.as_dict() for usuario in usuarios])
 
 @bp.route('/usuarios/<int:id>', methods=['GET'])
-@token_required
+@jwt_required()
 def obtener_usuario(id):
     usuario = User.query.get(id)
     return jsonify(usuario.as_dict()) if usuario else ('', 404)
@@ -75,11 +38,17 @@ def crear_usuario():
     db.session.add(nuevo_usuario)
     db.session.commit()
     
-    auth_token = encode_auth_token(nuevo_usuario.user_id)
+    auth_token = create_access_token(identity={
+        'user': nuevo_usuario.user_id,
+        'type': nuevo_usuario.role_id,
+        'name': nuevo_usuario.user_name,
+        'email': nuevo_usuario.user_email
+    })
+    
     return jsonify({'token': auth_token, 'usuario': nuevo_usuario.as_dict()}), 201
 
 @bp.route('/usuarios/<int:id>', methods=['PUT'])
-@token_required
+@jwt_required()
 def actualizar_usuario(id):
     data = request.json
     usuario = User.query.get(id)
@@ -92,7 +61,7 @@ def actualizar_usuario(id):
         return ('', 404)
 
 @bp.route('/usuarios/<int:id>', methods=['DELETE'])
-@token_required
+@jwt_required()
 def eliminar_usuario(id):
     usuario = User.query.get(id)
     if usuario:
@@ -106,8 +75,13 @@ def eliminar_usuario(id):
 def login():
     data = request.json
     usuario = User.query.filter_by(user_email=data['user_email']).first()
-    if usuario and usuario.check_password(data['user_password']):
-        auth_token = encode_auth_token(usuario.user_id)
+    if usuario and check_password_hash(usuario.user_password, data['user_password']):
+        auth_token = create_access_token(identity={
+            'user': usuario.user_id,
+            'type': usuario.role_id,
+            'name': usuario.user_name,
+            'email': usuario.user_email
+        })
         return jsonify({'token': auth_token, 'usuario': usuario.as_dict()})
     else:
         return ('', 401)
@@ -129,5 +103,24 @@ def registro():
     )
     db.session.add(nuevo_usuario)
     db.session.commit()
-    auth_token = encode_auth_token(nuevo_usuario.user_id)
+    
+    auth_token = create_access_token(identity={
+        'user': nuevo_usuario.user_id,
+        'type': nuevo_usuario.role_id,
+        'centrocostos': nuevo_usuario.costcenter_id,
+        'email': nuevo_usuario.user_email
+    })
+    
     return jsonify({'token': auth_token, 'usuario': nuevo_usuario.as_dict()}), 201
+
+@bp.route('/is-verify', methods=['GET'])
+@jwt_required()
+def is_verify():
+    try:
+        # Debugging: Verifica la información del token
+        print("Token recibido:", request.headers.get('Authorization'))
+        current_user = get_jwt_identity()
+        return jsonify(True)
+    except Exception as e:
+        print("Error:", str(e))
+        return jsonify({"msg": "Invalid token"}), 401
