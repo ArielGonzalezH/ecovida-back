@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from extensions import db
 from models.foundation import Foundation
+from rabbitmq import enviar_mensaje_a_rabbitmq
+import logging
 
 bp = Blueprint('foundation_service', __name__)
 
@@ -11,11 +13,19 @@ def test_route():
 @bp.route('/foundations', methods=['GET'])
 def get_foundations():
     foundations = Foundation.query.all()
+    try:
+        enviar_mensaje_a_rabbitmq('foundations', 'Consulta de todas las fundaciones realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify([foundation.as_dict() for foundation in foundations])
 
 @bp.route('/foundations/<int:id>', methods=['GET'])
 def get_foundation(id):
     foundation = Foundation.query.get(id)
+    try:
+        enviar_mensaje_a_rabbitmq('foundations', f'Consulta de la fundación con ID {id} realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify(foundation.as_dict()) if foundation else ('', 404)
 
 @bp.route('/foundations', methods=['POST'])
@@ -33,7 +43,12 @@ def create_foundation():
         db.session.add(new_foundation)
         db.session.commit()
         
+        try:
+            enviar_mensaje_a_rabbitmq('foundations', f'Fundación creada: {new_foundation.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return jsonify(new_foundation.as_dict()), 201
+    
     except Exception as e:
         print(f"Error al crear fundación: {e}")
         return jsonify({'error': str(e)}), 500
@@ -46,6 +61,10 @@ def update_foundation(id):
         for key, value in data.items():
             setattr(foundation, key, value)
         db.session.commit()
+        try:
+            enviar_mensaje_a_rabbitmq('foundations', f'Fundación actualizada: {foundation.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return jsonify(foundation.as_dict())
     else:
         return ('', 404)
@@ -56,6 +75,10 @@ def delete_foundation(id):
     if (foundation):
         db.session.delete(foundation)
         db.session.commit()
+        try:
+            enviar_mensaje_a_rabbitmq('foundations', f'Fundación eliminada: {foundation.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return ('', 204)
     else:
         return ('', 404)

@@ -1,17 +1,27 @@
 from flask import Blueprint, request, jsonify
 from extensions import db
 from models.product import Product
+from rabbitmq import enviar_mensaje_a_rabbitmq
+import logging
 
 bp = Blueprint('product_service', __name__)
 
 @bp.route('/productos', methods=['GET'])
 def obtener_productos():
     productos = Product.query.all()
+    try:
+        enviar_mensaje_a_rabbitmq('products', 'Consulta de todos los productos realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify([producto.as_dict() for producto in productos])
 
 @bp.route('/productos/<int:id>', methods=['GET'])
 def obtener_producto(id):
     producto = Product.query.get(id)
+    try:
+        enviar_mensaje_a_rabbitmq('products', f'Consulta del producto con ID {id} realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify(producto.as_dict()) if producto else ('', 404)
 
 @bp.route('/productos', methods=['POST'])
@@ -32,6 +42,10 @@ def crear_producto():
     )
     db.session.add(nuevo_producto)
     db.session.commit()
+    try:
+        enviar_mensaje_a_rabbitmq('products', f'Producto creado: {nuevo_producto.as_dict()}')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify(nuevo_producto.as_dict()), 201
 
 @bp.route('/productos/<int:id>', methods=['PUT'])
@@ -42,6 +56,10 @@ def actualizar_producto(id):
         for key, value in data.items():
             setattr(producto, key, value)
         db.session.commit()
+        try:
+            enviar_mensaje_a_rabbitmq('products', f'Producto actualizado: {producto.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return jsonify(producto.as_dict())
     else:
         return ('', 404)
@@ -52,6 +70,10 @@ def eliminar_producto(id):
     if (producto):
         db.session.delete(producto)
         db.session.commit()
+        try:
+            enviar_mensaje_a_rabbitmq('products', f'Producto eliminado: {producto.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return ('', 204)
     else:
         return ('', 404)

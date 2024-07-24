@@ -6,6 +6,8 @@ import datetime
 from functools import wraps
 from flask import current_app as app
 from werkzeug.security import generate_password_hash, check_password_hash
+from rabbitmq import enviar_mensaje_a_rabbitmq
+import logging
 
 bp = Blueprint('user_service', __name__)
 
@@ -47,12 +49,20 @@ def token_required(f):
 @token_required
 def obtener_usuarios():
     usuarios = User.query.all()
+    try:
+        enviar_mensaje_a_rabbitmq('users', 'Consulta de todos los usuarios realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify([usuario.as_dict() for usuario in usuarios])
 
 @bp.route('/usuarios/<int:id>', methods=['GET'])
 @token_required
 def obtener_usuario(id):
     usuario = User.query.get(id)
+    try:
+        enviar_mensaje_a_rabbitmq('users', f'Consulta del usuario con ID {id} realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify(usuario.as_dict()) if usuario else ('', 404)
 
 @bp.route('/usuarios', methods=['POST'])
@@ -76,6 +86,10 @@ def crear_usuario():
     db.session.commit()
     
     auth_token = encode_auth_token(nuevo_usuario.user_id)
+    try:
+        enviar_mensaje_a_rabbitmq('users', f'Usuario creado: {nuevo_usuario.as_dict()}')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify({'token': auth_token, 'usuario': nuevo_usuario.as_dict()}), 201
 
 @bp.route('/usuarios/<int:id>', methods=['PUT'])
@@ -87,6 +101,10 @@ def actualizar_usuario(id):
         for key, value in data.items():
             setattr(usuario, key, value)
         db.session.commit()
+        try:
+            enviar_mensaje_a_rabbitmq('users', f'Usuario actualizado: {usuario.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return jsonify(usuario.as_dict())
     else:
         return ('', 404)
@@ -98,6 +116,10 @@ def eliminar_usuario(id):
     if usuario:
         db.session.delete(usuario)
         db.session.commit()
+        try:
+            enviar_mensaje_a_rabbitmq('users', f'Usuario eliminado: {usuario.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return ('', 204)
     else:
         return ('', 404)
