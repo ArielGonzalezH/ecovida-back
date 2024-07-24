@@ -1,17 +1,27 @@
 from flask import Blueprint, request, jsonify
 from extensions import db
 from models.sale import Sale
+from rabbitmq import enviar_mensaje_a_rabbitmq
+import logging
 
 bp = Blueprint('sale_service', __name__)
 
 @bp.route('/ventas', methods=['GET'])
 def obtener_ventas():
     ventas = Sale.query.all()
+    try:
+        enviar_mensaje_a_rabbitmq('sales', 'Consulta de todas las ventas realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify([venta.as_dict() for venta in ventas])
 
 @bp.route('/ventas/<int:id>', methods=['GET'])
 def obtener_venta(id):
     venta = Sale.query.get(id)
+    try:
+        enviar_mensaje_a_rabbitmq('sales', f'Consulta de la venta con ID {id} realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify(venta.as_dict()) if venta else ('', 404)
 
 @bp.route('/ventas', methods=['POST'])
@@ -30,6 +40,10 @@ def crear_venta():
     )
     db.session.add(nueva_venta)
     db.session.commit()
+    try:
+        enviar_mensaje_a_rabbitmq('sales', f'Venta creada: {nueva_venta.as_dict()}')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify(nueva_venta.as_dict()), 201
 
 @bp.route('/ventas/<int:id>', methods=['PUT'])
@@ -40,6 +54,10 @@ def actualizar_venta(id):
         for key, value in data.items():
             setattr(venta, key, value)
         db.session.commit()
+        try:
+            enviar_mensaje_a_rabbitmq('sales', f'Venta actualizada: {venta.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return jsonify(venta.as_dict())
     else:
         return ('', 404)
@@ -50,6 +68,10 @@ def eliminar_venta(id):
     if (venta):
         db.session.delete(venta)
         db.session.commit()
+        try:
+            enviar_mensaje_a_rabbitmq('sales', f'Venta eliminada: {venta.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return ('', 204)
     else:
         return ('', 404)

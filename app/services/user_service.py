@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from extensions import db
 from models.user import User
 from werkzeug.security import generate_password_hash, check_password_hash
+from rabbitmq import enviar_mensaje_a_rabbitmq
+import logging
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, decode_token
 
 bp = Blueprint('user_service', __name__)
@@ -10,12 +12,20 @@ bp = Blueprint('user_service', __name__)
 @jwt_required()
 def obtener_usuarios():
     usuarios = User.query.all()
+    try:
+        enviar_mensaje_a_rabbitmq('users', 'Consulta de todos los usuarios realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify([usuario.as_dict() for usuario in usuarios])
 
 @bp.route('/usuarios/<int:id>', methods=['GET'])
 @jwt_required()
 def obtener_usuario(id):
     usuario = User.query.get(id)
+    try:
+        enviar_mensaje_a_rabbitmq('users', f'Consulta del usuario con ID {id} realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     return jsonify(usuario.as_dict()) if usuario else ('', 404)
 
 @bp.route('/usuarios', methods=['POST'])
@@ -56,6 +66,10 @@ def actualizar_usuario(id):
         for key, value in data.items():
             setattr(usuario, key, value)
         db.session.commit()
+        try:
+            enviar_mensaje_a_rabbitmq('users', f'Usuario actualizado: {usuario.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return jsonify(usuario.as_dict())
     else:
         return ('', 404)
@@ -67,6 +81,10 @@ def eliminar_usuario(id):
     if usuario:
         db.session.delete(usuario)
         db.session.commit()
+        try:
+            enviar_mensaje_a_rabbitmq('users', f'Usuario eliminado: {usuario.as_dict()}')
+        except Exception as e:
+            logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
         return ('', 204)
     else:
         return ('', 404)
