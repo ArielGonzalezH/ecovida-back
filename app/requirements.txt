@@ -2,6 +2,7 @@ Flask
 Flask-SQLAlchemy
 Flask-Bcrypt
 Flask-PyMongo
+Flask-JWT-Extended
 pymongo
 pymysql
 spyne

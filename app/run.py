@@ -2,6 +2,7 @@ import pymysql
 pymysql.install_as_MySQLdb()
 
 from flask import Flask
+from flask_jwt_extended import JWTManager
 from config import Config
 from extensions import db, bcrypt
 from flask_pymongo import PyMongo
@@ -21,6 +22,8 @@ def create_app():
     
     # Configuración de MongoDB
     mongo = PyMongo(app, uri=app.config['MONGODB_URI'])
+
+    jwt = JWTManager(app)
 
     # Inicializar servicios SOAP
     inventario_service.init_app(app)
