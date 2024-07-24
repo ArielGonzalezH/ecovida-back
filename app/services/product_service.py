@@ -55,3 +55,8 @@ def eliminar_producto(id):
         return ('', 204)
     else:
         return ('', 404)
+
+@bp.route('/productos/foundation/<int:found_id>', methods=['GET'])
+def obtener_productos_por_foundation(found_id):
+    productos = Product.query.filter_by(found_id=found_id).all()
+    return jsonify([producto.as_dict() for producto in productos]) if productos else ('', 404)

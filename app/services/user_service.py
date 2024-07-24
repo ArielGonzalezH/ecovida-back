@@ -117,7 +117,6 @@ def registro():
 @jwt_required()
 def is_verify():
     try:
-        # Debugging: Verifica la información del token
         print("Token recibido:", request.headers.get('Authorization'))
         current_user = get_jwt_identity()
         return jsonify(True)
