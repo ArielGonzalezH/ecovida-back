@@ -3,6 +3,7 @@ from extensions import db
 from models.product import Product
 from rabbitmq import enviar_mensaje_a_rabbitmq
 import logging
+from sqlalchemy import text
 
 bp = Blueprint('product_service', __name__)
 
@@ -82,3 +83,48 @@ def eliminar_producto(id):
 def obtener_productos_por_foundation(found_id):
     productos = Product.query.filter_by(found_id=found_id).all()
     return jsonify([producto.as_dict() for producto in productos]) if productos else ('', 404)
+
+@bp.route('/user_foundation_product/<int:user_id>', methods=['GET'])
+def obtener_user_foundation_product(user_id):
+    query = text("""
+    SELECT USER.*, FOUNDATION.*, PRODUCT.*
+    FROM USER
+    LEFT JOIN FOUNDATION ON USER.user_id = FOUNDATION.user_id
+    LEFT JOIN PRODUCT ON FOUNDATION.found_id = PRODUCT.found_id
+    WHERE USER.user_id = :user_id
+    """)
+    result = db.session.execute(query, {'user_id': user_id})
+    
+    # Convert result to a list of dictionaries
+    rows = result.mappings().all()
+
+    # Initialize the data dictionary
+    data = {
+        'user': None,
+        'foundations': []
+    }
+    
+    foundations_dict = {}
+
+    for row in rows:
+        # Collecting user data, setting it once since it is the same for all rows
+        if not data['user']:
+            data['user'] = {key: row[key] for key in row if key.startswith('user_')}
+        
+        # Extract foundation data
+        found_id = row['found_id']
+        if found_id not in foundations_dict:
+            foundations_dict[found_id] = {
+                'foundation': {key: row[key] for key in row if key.startswith('found_')},
+                'products': []
+            }
+        
+        # Extract product data if present
+        product_data = {key: row[key] for key in row if key.startswith('product_')}
+        if product_data and row['product_id'] is not None:
+            foundations_dict[found_id]['products'].append(product_data)
+
+    # Convert dictionary to list
+    data['foundations'] = list(foundations_dict.values())
+
+    return jsonify(data)
