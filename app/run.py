@@ -7,7 +7,7 @@ from config import Config
 from extensions import db, bcrypt
 from flask_pymongo import PyMongo
 from flask_cors import CORS  # Importa CORS
-from services import foundation_service, product_service, role_service, sale_service, user_service, sale_header_service, sale_item_service
+from services import foundation_service, product_service, role_service, sale_service, user_service, sale_header_service, sale_item_service, package_service
 from soap_services import inventario_service
 
 def create_app():
@@ -36,6 +36,8 @@ def create_app():
     app.register_blueprint(user_service.bp, url_prefix='/api/users')
     app.register_blueprint(sale_header_service.bp, url_prefix='/api/sale_headers')
     app.register_blueprint(sale_item_service.bp, url_prefix='/api/sale_items')
+    app.register_blueprint(package_service.bp, url_prefix='/api/packages')
+
 
     return app
 
