@@ -62,14 +62,21 @@ def crear_usuario():
 def actualizar_usuario(id):
     data = request.json
     usuario = User.query.get(id)
+    
     if usuario:
         for key, value in data.items():
+            # Si el campo de datos es 'user_password', cifrarla antes de actualizar
+            if key == 'user_password':
+                value = generate_password_hash(value)
             setattr(usuario, key, value)
+        
         db.session.commit()
+        
         try:
             enviar_mensaje_a_rabbitmq('users', f'Usuario actualizado: {usuario.as_dict()}')
         except Exception as e:
             logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
+        
         return jsonify(usuario.as_dict())
     else:
         return ('', 404)

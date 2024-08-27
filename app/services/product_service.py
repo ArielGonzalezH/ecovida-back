@@ -87,11 +87,28 @@ def obtener_productos_por_foundation(found_id):
 @bp.route('/user_foundation_product/<int:user_id>', methods=['GET'])
 def obtener_user_foundation_product(user_id):
     query = text("""
-    SELECT USER.*, FOUNDATION.*, PRODUCT.*
-    FROM USER
-    LEFT JOIN FOUNDATION ON USER.user_id = FOUNDATION.user_id
-    LEFT JOIN PRODUCT ON FOUNDATION.found_id = PRODUCT.found_id
-    WHERE USER.user_id = :user_id
+    SELECT
+        U.user_id AS user_user_id,
+        U.role_id AS user_role_id,
+        U.user_name AS user_user_name,
+        U.user_lastname AS user_user_lastname,
+        U.user_email AS user_user_email,
+        U.user_password AS user_user_password,
+        F.found_id AS foundation_found_id,
+        F.USER_ID AS foundation_user_id,
+        F.found_name AS foundation_found_name,
+        F.found_ruc AS foundation_found_ruc,
+        P.product_id AS product_product_id,
+        P.FOUND_ID AS product_found_id,
+        P.product_name AS product_product_name,
+        P.product_price AS product_product_price,
+        P.product_description AS product_product_description,
+        P.product_stock AS product_product_stock,
+        P.product_duedate AS product_product_duedate
+    FROM USER AS U
+    LEFT JOIN FOUNDATION AS F ON U.user_id = F.user_id
+    LEFT JOIN PRODUCT AS P ON F.found_id = P.found_id
+    WHERE U.user_id = :user_id
     """)
     result = db.session.execute(query, {'user_id': user_id})
     
@@ -112,16 +129,16 @@ def obtener_user_foundation_product(user_id):
             data['user'] = {key: row[key] for key in row if key.startswith('user_')}
         
         # Extract foundation data
-        found_id = row['found_id']
+        found_id = row['foundation_found_id']
         if found_id not in foundations_dict:
             foundations_dict[found_id] = {
-                'foundation': {key: row[key] for key in row if key.startswith('found_')},
+                'foundation': {key: row[key] for key in row if key.startswith('foundation_')},
                 'products': []
             }
         
         # Extract product data if present
         product_data = {key: row[key] for key in row if key.startswith('product_')}
-        if product_data and row['product_id'] is not None:
+        if product_data and row['product_product_id'] is not None:
             foundations_dict[found_id]['products'].append(product_data)
 
     # Convert dictionary to list
