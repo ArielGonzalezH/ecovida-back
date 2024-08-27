@@ -82,7 +82,7 @@ def eliminar_venta(id):
     else:
         return ('', 404)
     
-@bp.route('/sale_header/<int:user_id>', methods=['GET'])
+@bp.route('/sale_header/<int:user_id>/user', methods=['GET'])
 def getLatestSaleHeader(user_id):
     venta = Sale_Header.query.filter(Sale_Header.user_id == user_id) \
                               .order_by(Sale_Header.sale_date.desc()) \

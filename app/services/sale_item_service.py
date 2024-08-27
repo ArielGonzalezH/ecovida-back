@@ -29,14 +29,14 @@ def obtener_venta(id):
 def crear_venta():
     data = request.json
 
-    max_id = db.session.query(db.func.max(Sale_Item.sale_id)).scalar()
+    max_id = db.session.query(db.func.max(Sale_Item.item_id)).scalar()
     nuevo_id = max_id + 1 if max_id is not None else 1
 
     nueva_venta = Sale_Item(
         item_id=nuevo_id,
         sale_header_id=data['sale_header_id'],
         product_id=data['product_id'],
-        sale_quantity=data['sale_quantity']
+        item_quantity=data['item_quantity']
     )
     db.session.add(nueva_venta)
     db.session.commit()
