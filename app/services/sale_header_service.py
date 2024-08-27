@@ -93,3 +93,15 @@ def getLatestSaleHeader(user_id):
         logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
     
     return jsonify(venta.as_dict()) if venta else ('', 404)
+
+@bp.route('/sale_headers/<int:user_id>', methods=['GET'])
+def obtener_ventas_por_usuario(user_id):
+    """
+    Consulta todas las ventas por el ID del usuario.
+    """
+    ventas = Sale_Header.query.filter_by(user_id=user_id).all()
+    try:
+        enviar_mensaje_a_rabbitmq('sales', f'Consulta de ventas para el usuario con ID {user_id} realizada')
+    except Exception as e:
+        logging.error(f"Error al enviar mensaje a RabbitMQ: {e}")
+    return jsonify([venta.as_dict() for venta in ventas])
