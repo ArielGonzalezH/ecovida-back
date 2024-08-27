@@ -1,6 +1,10 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from config import Config
+from extensions import db, bcrypt
+from flask_pymongo import PyMongo
+from flask_cors import CORS  # Importa CORS
+from services import foundation_service, product_service, role_service, sale_service, user_service, sale_header_service, sale_item_service, package_service
 from extensions import db, bcrypt, mongo  # Asegúrate de importar mongo
 from flask_cors import CORS
 from services import (foundation_service, product_service, role_service,
@@ -35,6 +39,8 @@ def create_app():
     app.register_blueprint(sale_header_service.bp, url_prefix='/api/sale_headers')
     app.register_blueprint(sale_item_service.bp, url_prefix='/api/sale_items')
     app.register_blueprint(comment_service_bp, url_prefix='/api/comments')  # Registrar el blueprint de comentarios
+    app.register_blueprint(package_service.bp, url_prefix='/api/packages')
+
 
     return app
 
