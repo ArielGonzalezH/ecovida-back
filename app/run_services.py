@@ -5,6 +5,7 @@ from services.product_service import bp as product_service_bp
 from services.role_service import bp as role_service_bp
 from services.sale_service import bp as sale_service_bp
 from services.user_service import bp as user_service_bp
+from services.comment_service import bp as comment_service_bp
 
 app = create_app()
 

@@ -10,4 +10,4 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Conexión a MongoDB
-    MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://root:ecovida@mongodb:27017/ecovida?authSource=admin')
+    MONGO_URI = os.getenv('MONGODB_URI', 'mongodb://root:ecovida@mongodb:27017/ecovida?authSource=admin')
